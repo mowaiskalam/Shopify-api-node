@@ -529,6 +529,29 @@ describe('Shopify', () => {
         expect(res).to.deep.equal(data);
       });
     });
+
+    it('should retry 429 errors from Shopify after the retry-after header has elapsed', async () => {
+      const shopify = new Shopify({
+        accessToken,
+        parseJson,
+        shopName,
+        stringifyJson,
+        enableRetry: true,
+        maxRetries: 3
+      });
+
+      const data = { shop: 'My Cool Test Shop' };
+      nock(`https://${shopName}.myshopify.com`)
+        .get('/admin/shop.json')
+        .reply(429, () => 'too many requests', { 'Retry-After': '1' })
+        .get('/admin/shop.json')
+        .reply(429, () => 'too many requests', { 'Retry-After': '2' })
+        .get('/admin/shop.json')
+        .reply(200, JSON.stringify(data));
+
+      const result = await shopify.shop.get();
+      return expect(result).equal('My Cool Test Shop');
+    });
   });
 
   describe('Shopify#graphql', () => {
