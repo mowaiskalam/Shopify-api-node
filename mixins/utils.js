@@ -16,6 +16,7 @@ const responseFromError = (error) => {
       return response;
     }
   }
+  return error;
 };
 
 const isRetryableConnectionError = (error) => {
